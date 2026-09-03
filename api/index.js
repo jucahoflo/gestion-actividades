@@ -7,17 +7,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ========== CONFIGURACIÓN DE NEON ==========
+console.log('🚀 Iniciando servidor con Supabase...');
+
+// ========== CONEXIÓN A SUPABASE ==========
+// Credenciales extraídas de tu proyecto
 const pool = new Pool({
-    host: 'ep-restless-field-acue93wu-pooler.sa-east-1.aws.neon.tech',
+    host: 'db.lzlaofoptycuxyuefetc.supabase.co',
     port: 5432,
-    user: 'neondb_owner',
-    password: 'npg_UALkiTHvq40u',
-    database: 'neondb',
+    user: 'postgres',
+    password: 'PYqzqvT*6/vKb!u',  // <--- Reemplaza con tu contraseña real
+    database: 'postgres',
     ssl: { rejectUnauthorized: false }
 });
 
-console.log('📊 Conectando a Neon...');
+console.log('📊 Conectando a Supabase...');
 
 // ========== RUTAS ==========
 
@@ -25,7 +28,7 @@ console.log('📊 Conectando a Neon...');
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
-        message: 'Servidor funcionando',
+        message: 'Servidor funcionando con Supabase',
         timestamp: new Date().toISOString()
     });
 });
@@ -62,7 +65,7 @@ app.post('/api/actividades', async (req, res) => {
              fecha || new Date().toLocaleDateString('es-ES'), area || 'AREA O SISTEMA']
         );
         
-        console.log('✅ Actividad guardada');
+        console.log('✅ Actividad guardada en Supabase');
         res.json({ success: true, message: 'Actividad agregada', actividad: result.rows[0] });
     } catch (error) {
         console.error('❌ Error:', error.message);
@@ -135,7 +138,6 @@ app.post('/api/export-excel', async (req, res) => {
             { header: 'EJECUTANTE', key: 'ejecutante', width: 20 }
         ];
         
-        // Título
         worksheet.mergeCells('A1:G1');
         const titleCell = worksheet.getCell('A1');
         titleCell.value = 'GESTIÓN DE ACTIVIDADES POR ÁREA';
@@ -144,7 +146,6 @@ app.post('/api/export-excel', async (req, res) => {
         titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B0000' } };
         worksheet.getRow(1).height = 35;
         
-        // Fecha y Área
         worksheet.mergeCells('A2:G2');
         worksheet.getCell('A2').value = `FECHA: ${fecha || new Date().toLocaleDateString('es-ES')}`;
         worksheet.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
@@ -155,7 +156,6 @@ app.post('/api/export-excel', async (req, res) => {
         worksheet.getCell('A3').font = { name: 'Arial', size: 11, bold: true };
         worksheet.getCell('A3').alignment = { horizontal: 'center' };
         
-        // Encabezados
         const headerRow = worksheet.getRow(4);
         headerRow.values = ['DESCRIPCIÓN', 'TAG', 'PROG/NÓ PROG', 'ESTACION', 'AVANCE', 'OT', 'EJECUTANTE'];
         headerRow.eachCell((cell) => {
@@ -165,7 +165,6 @@ app.post('/api/export-excel', async (req, res) => {
             cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         });
         
-        // Datos
         let row = 5;
         actividades.forEach((act) => {
             const r = worksheet.getRow(row);
@@ -188,6 +187,7 @@ app.post('/api/export-excel', async (req, res) => {
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
+        console.error('❌ Error en export:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -195,6 +195,6 @@ app.post('/api/export-excel', async (req, res) => {
 // ========== INICIAR SERVIDOR ==========
 module.exports = app;
 
-console.log('✅ Servidor configurado para Vercel');
-console.log('📊 Conectando a Neon...');
+console.log('✅ Servidor configurado para Vercel con Supabase');
+console.log('📊 Conectando a Supabase PostgreSQL');
 console.log('🔐 Credenciales: Gestion / 2026');
