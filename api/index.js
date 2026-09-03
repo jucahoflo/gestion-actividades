@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-console.log('🚀 Iniciando servidor con Supabase...');
+console.log('🚀 Servidor iniciado con Supabase...');
 
 // ========== CONEXIÓN A SUPABASE ==========
 const pool = new Pool({
@@ -18,8 +18,6 @@ const pool = new Pool({
     database: 'postgres',
     ssl: { rejectUnauthorized: false }
 });
-
-console.log('📊 Conectando a Supabase...');
 
 // ========== RUTAS ==========
 
@@ -35,23 +33,17 @@ app.get('/api/health', (req, res) => {
 // Obtener todas las actividades
 app.get('/api/actividades', async (req, res) => {
     try {
-        console.log('📡 GET /api/actividades');
         const result = await pool.query('SELECT * FROM actividades ORDER BY id DESC');
-        console.log(`✅ Enviando ${result.rows.length} actividades`);
         res.json(result.rows);
     } catch (error) {
-        console.error('❌ Error:', error.message);
-        res.status(500).json({ 
-            error: 'Error al obtener actividades',
-            details: error.message 
-        });
+        console.error('Error:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
 // Agregar actividad
 app.post('/api/actividades', async (req, res) => {
     try {
-        console.log('📥 POST /api/actividades');
         const { descripcion, tag, progNoProg, estacion, avance, ot, ejecutante, subarea, fecha, area } = req.body;
         
         const result = await pool.query(
@@ -64,11 +56,10 @@ app.post('/api/actividades', async (req, res) => {
              fecha || new Date().toLocaleDateString('es-ES'), area || 'AREA O SISTEMA']
         );
         
-        console.log('✅ Actividad guardada en Supabase');
         res.json({ success: true, message: 'Actividad agregada', actividad: result.rows[0] });
     } catch (error) {
-        console.error('❌ Error:', error.message);
-        res.status(500).json({ error: 'Error al agregar actividad', details: error.message });
+        console.error('Error:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -137,6 +128,7 @@ app.post('/api/export-excel', async (req, res) => {
             { header: 'EJECUTANTE', key: 'ejecutante', width: 20 }
         ];
         
+        // Título
         worksheet.mergeCells('A1:G1');
         const titleCell = worksheet.getCell('A1');
         titleCell.value = 'GESTIÓN DE ACTIVIDADES POR ÁREA';
@@ -186,14 +178,9 @@ app.post('/api/export-excel', async (req, res) => {
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
-        console.error('❌ Error en export:', error.message);
+        console.error('Error en export:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ========== INICIAR SERVIDOR ==========
 module.exports = app;
-
-console.log('✅ Servidor configurado para Vercel con Supabase');
-console.log('📊 Conectando a Supabase PostgreSQL');
-console.log('🔐 Credenciales: Gestion / 2026');
