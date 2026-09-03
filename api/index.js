@@ -10,12 +10,11 @@ app.use(express.json());
 console.log('🚀 Iniciando servidor con Supabase...');
 
 // ========== CONEXIÓN A SUPABASE ==========
-// Credenciales extraídas de tu proyecto
 const pool = new Pool({
     host: 'db.lzlaofoptycuxyuefetc.supabase.co',
     port: 5432,
     user: 'postgres',
-    password: 'PYqzqvT*6/vKb!u',  // <--- Reemplaza con tu contraseña real
+    password: 'PYqzqvT*6/vKb!u',
     database: 'postgres',
     ssl: { rejectUnauthorized: false }
 });
