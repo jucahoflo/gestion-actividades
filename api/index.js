@@ -9,17 +9,22 @@ app.use(express.json());
 
 console.log('🚀 Iniciando servidor...');
 
-// ========== CONEXIÓN DIRECTA A NEON ==========
+// ========== CONEXIÓN A NEON CON SSL OBLIGATORIO ==========
+// FORZAR SSL: ssl: true, rejectUnauthorized: false
 const pool = new Pool({
     user: 'neondb_owner',
     password: 'npg_UALkiTHvq40u',
     host: 'ep-restless-field-acue93wu-pooler.sa-east-1.aws.neon.tech',
     port: 5432,
     database: 'neondb',
-    ssl: true
+    ssl: {
+        rejectUnauthorized: false,
+        // Forzar SSL
+        sslmode: 'require'
+    }
 });
 
-console.log('📊 Conectando a Neon...');
+console.log('📊 Conectando a Neon con SSL forzado...');
 
 // ========== RUTAS ==========
 
@@ -137,6 +142,7 @@ app.post('/api/export-excel', async (req, res) => {
             { header: 'EJECUTANTE', key: 'ejecutante', width: 20 }
         ];
         
+        // Título
         worksheet.mergeCells('A1:G1');
         const titleCell = worksheet.getCell('A1');
         titleCell.value = 'GESTIÓN DE ACTIVIDADES POR ÁREA';
@@ -145,6 +151,7 @@ app.post('/api/export-excel', async (req, res) => {
         titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B0000' } };
         worksheet.getRow(1).height = 35;
         
+        // Fecha y Área
         worksheet.mergeCells('A2:G2');
         worksheet.getCell('A2').value = `FECHA: ${fecha || new Date().toLocaleDateString('es-ES')}`;
         worksheet.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
@@ -155,6 +162,7 @@ app.post('/api/export-excel', async (req, res) => {
         worksheet.getCell('A3').font = { name: 'Arial', size: 11, bold: true };
         worksheet.getCell('A3').alignment = { horizontal: 'center' };
         
+        // Encabezados
         const headerRow = worksheet.getRow(4);
         headerRow.values = ['DESCRIPCIÓN', 'TAG', 'PROG/NÓ PROG', 'ESTACION', 'AVANCE', 'OT', 'EJECUTANTE'];
         headerRow.eachCell((cell) => {
@@ -164,6 +172,7 @@ app.post('/api/export-excel', async (req, res) => {
             cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         });
         
+        // Datos
         let row = 5;
         actividades.forEach((act) => {
             const r = worksheet.getRow(row);
@@ -192,3 +201,7 @@ app.post('/api/export-excel', async (req, res) => {
 
 // ========== INICIAR SERVIDOR ==========
 module.exports = app;
+
+console.log('✅ Servidor configurado para Vercel');
+console.log('📊 Conectando a Neon con SSL forzado');
+console.log('🔐 Credenciales: Gestion / 2026');
