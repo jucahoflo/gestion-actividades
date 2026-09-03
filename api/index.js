@@ -1,16 +1,16 @@
 const express = require('express');
 const { Pool } = require('pg');
-const cors = require('cors');
 
 const app = express();
-app.use(cors());
 app.use(express.json());
+app.use(require('cors')());
 
 console.log('🚀 Servidor iniciado...');
 
-// ========== CONEXIÓN DIRECTA A SUPABASE ==========
+// ========== CONEXIÓN A SUPABASE ==========
+// Contraseña codificada para URL
 const pool = new Pool({
-    connectionString: 'postgresql://postgres:PYqzqvT*6/vKb!u@db.lznaxrbcyhxtwptfnekt.supabase.co:5432/postgres?sslmode=require',
+    connectionString: 'postgresql://postgres:PYqzqvT%2A6%2FvKb%21u@db.lznaxrbcyhxtwptfnekt.supabase.co:5432/postgres?sslmode=require',
     ssl: { rejectUnauthorized: false }
 });
 
@@ -24,18 +24,11 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/test-db', async (req, res) => {
     try {
-        const result = await pool.query('SELECT NOW() as time, version() as version');
-        res.json({ 
-            success: true, 
-            message: '✅ Conexión a Supabase exitosa',
-            data: result.rows[0]
-        });
+        const result = await pool.query('SELECT NOW() as time');
+        res.json({ success: true, data: result.rows[0] });
     } catch (error) {
         console.error('❌ Error de conexión:', error.message);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message
-        });
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -98,7 +91,6 @@ app.post('/api/verify', async (req, res) => {
     }
 });
 
-// ========== INICIAR SERVIDOR ==========
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Servidor corriendo en puerto ${PORT}`);
