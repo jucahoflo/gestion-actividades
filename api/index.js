@@ -1,5 +1,9 @@
 const express = require('express');
 const { Pool } = require('pg');
+const dns = require('dns');
+
+// Forzar IPv4
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 app.use(express.json());
@@ -7,14 +11,13 @@ app.use(require('cors')());
 
 console.log('🚀 Servidor iniciado...');
 
-// ========== CONEXIÓN A SUPABASE ==========
-// Contraseña codificada para URL
+// ========== CONEXIÓN A SUPABASE CON IPv4 ==========
 const pool = new Pool({
     connectionString: 'postgresql://postgres:PYqzqvT%2A6%2FvKb%21u@db.lznaxrbcyhxtwptfnekt.supabase.co:5432/postgres?sslmode=require',
     ssl: { rejectUnauthorized: false }
 });
 
-console.log('📊 Conectando a Supabase...');
+console.log('📊 Conectando a Supabase (IPv4)...');
 
 // ========== RUTAS ==========
 
