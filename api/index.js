@@ -7,9 +7,9 @@ app.use(require('cors')());
 
 console.log('🚀 Servidor iniciado con Supabase...');
 
-// ========== CONEXIÓN DIRECTA A SUPABASE ==========
+// ========== CONEXIÓN A SUPABASE (NUEVO PROYECTO) ==========
 const pool = new Pool({
-    connectionString: 'postgresql://postgres:PYqzqvT*6/vKb!u@db.lzlaofoptycuxyuefetc.supabase.co:5432/postgres?sslmode=require',
+    connectionString: 'postgresql://postgres:PYqzqvT*6/vKb!u@db.lznaxrbcyhxtwptfnekt.supabase.co:5432/postgres?sslmode=require',
     ssl: { rejectUnauthorized: false }
 });
 
@@ -23,7 +23,7 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/test-db', async (req, res) => {
     try {
-        const result = await pool.query('SELECT NOW() as time, version() as version');
+        const result = await pool.query('SELECT NOW() as time');
         res.json({ 
             success: true, 
             message: 'Conexión a Supabase exitosa',
@@ -45,7 +45,7 @@ app.get('/api/actividades', async (req, res) => {
         console.log(`✅ Enviando ${result.rows.length} actividades`);
         res.json(result.rows);
     } catch (error) {
-        console.error('❌ Error en /api/actividades:', error.message);
+        console.error('❌ Error:', error.message);
         res.status(500).json({ 
             error: 'Error al obtener actividades',
             details: error.message 
@@ -71,7 +71,7 @@ app.post('/api/actividades', async (req, res) => {
         console.log('✅ Actividad guardada en Supabase');
         res.json({ success: true, message: 'Actividad agregada', actividad: result.rows[0] });
     } catch (error) {
-        console.error('❌ Error en POST /api/actividades:', error.message);
+        console.error('❌ Error:', error.message);
         res.status(500).json({ error: 'Error al agregar actividad', details: error.message });
     }
 });
