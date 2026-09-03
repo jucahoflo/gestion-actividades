@@ -7,8 +7,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-console.log('🚀 Iniciando servidor...');
-
 // ========== CONFIGURACIÓN DE NEON ==========
 const pool = new Pool({
     host: 'ep-restless-field-acue93wu-pooler.sa-east-1.aws.neon.tech',
@@ -19,47 +17,17 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-console.log('📊 Intentando conectar a Neon...');
-
-// ========== PROBAR CONEXIÓN AL INICIAR ==========
-pool.connect((err, client, release) => {
-    if (err) {
-        console.error('❌ ERROR DE CONEXIÓN A NEON:', err.message);
-        console.error('❌ Detalles:', err);
-        return;
-    }
-    console.log('✅ Conexión a Neon exitosa!');
-    release();
-});
+console.log('📊 Conectando a Neon...');
 
 // ========== RUTAS ==========
 
-// Health check - simple
+// Health check
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         message: 'Servidor funcionando',
         timestamp: new Date().toISOString()
     });
-});
-
-// Health check con base de datos
-app.get('/api/db-test', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT NOW() as time, version() as version');
-        res.json({ 
-            success: true,
-            message: 'Conexión a Neon exitosa',
-            data: result.rows[0]
-        });
-    } catch (error) {
-        console.error('❌ Error en db-test:', error.message);
-        res.status(500).json({ 
-            success: false,
-            error: error.message,
-            stack: error.stack
-        });
-    }
 });
 
 // Obtener todas las actividades
@@ -70,12 +38,10 @@ app.get('/api/actividades', async (req, res) => {
         console.log(`✅ Enviando ${result.rows.length} actividades`);
         res.json(result.rows);
     } catch (error) {
-        console.error('❌ Error en /api/actividades:', error.message);
-        console.error('❌ Stack:', error.stack);
+        console.error('❌ Error:', error.message);
         res.status(500).json({ 
             error: 'Error al obtener actividades',
-            message: error.message,
-            details: error.stack
+            details: error.message 
         });
     }
 });
@@ -84,14 +50,7 @@ app.get('/api/actividades', async (req, res) => {
 app.post('/api/actividades', async (req, res) => {
     try {
         console.log('📥 POST /api/actividades');
-        console.log('📦 Body recibido:', req.body);
-        
         const { descripcion, tag, progNoProg, estacion, avance, ot, ejecutante, subarea, fecha, area } = req.body;
-        
-        // Validar descripción
-        if (!descripcion) {
-            return res.status(400).json({ error: 'La descripción es obligatoria' });
-        }
         
         const result = await pool.query(
             `INSERT INTO actividades 
@@ -103,16 +62,11 @@ app.post('/api/actividades', async (req, res) => {
              fecha || new Date().toLocaleDateString('es-ES'), area || 'AREA O SISTEMA']
         );
         
-        console.log('✅ Actividad guardada:', result.rows[0]);
+        console.log('✅ Actividad guardada');
         res.json({ success: true, message: 'Actividad agregada', actividad: result.rows[0] });
     } catch (error) {
-        console.error('❌ Error en POST /api/actividades:', error.message);
-        console.error('❌ Stack:', error.stack);
-        res.status(500).json({ 
-            error: 'Error al agregar actividad',
-            message: error.message,
-            details: error.stack
-        });
+        console.error('❌ Error:', error.message);
+        res.status(500).json({ error: 'Error al agregar actividad', details: error.message });
     }
 });
 
@@ -120,34 +74,18 @@ app.post('/api/actividades', async (req, res) => {
 app.post('/api/login', async (req, res) => {
     const { usuario, contrasena } = req.body;
     try {
-        console.log('🔐 Login intento:', usuario);
         const result = await pool.query('SELECT * FROM usuarios WHERE username = $1', [usuario]);
-        
         if (result.rows.length === 0) {
             return res.status(401).json({ success: false, message: 'Usuario incorrecto' });
         }
-        
         const user = result.rows[0];
-        console.log('👤 Usuario encontrado:', user.username);
-        
         if (contrasena === user.password) {
-            const token = Buffer.from(JSON.stringify({ 
-                id: user.id, 
-                role: user.role,
-                username: user.username 
-            })).toString('base64');
-            
-            res.json({ 
-                success: true, 
-                message: 'Login exitoso',
-                token, 
-                role: user.role 
-            });
+            const token = Buffer.from(JSON.stringify({ id: user.id, role: user.role })).toString('base64');
+            res.json({ success: true, token, role: user.role });
         } else {
             res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
         }
     } catch (error) {
-        console.error('❌ Error en login:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -157,10 +95,8 @@ app.post('/api/verify', async (req, res) => {
     const { token } = req.body;
     try {
         const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-        console.log('🔑 Token verificado:', decoded.username);
         res.json({ valid: true, role: decoded.role });
     } catch (error) {
-        console.error('❌ Token inválido:', error.message);
         res.status(401).json({ valid: false });
     }
 });
@@ -175,7 +111,6 @@ app.post('/api/export-excel', async (req, res) => {
             if (decoded.role !== 'admin') {
                 return res.status(403).json({ error: 'No autorizado' });
             }
-            console.log('📊 Exportando Excel para:', decoded.username);
         } catch (error) {
             return res.status(401).json({ error: 'Token inválido' });
         }
@@ -186,8 +121,6 @@ app.post('/api/export-excel', async (req, res) => {
         if (actividades.length === 0) {
             return res.status(400).json({ error: 'No hay actividades' });
         }
-        
-        console.log(`📊 Exportando ${actividades.length} actividades`);
         
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Gestion Actividades');
@@ -236,13 +169,13 @@ app.post('/api/export-excel', async (req, res) => {
         let row = 5;
         actividades.forEach((act) => {
             const r = worksheet.getRow(row);
-            r.getCell(1).value = act.descripcion || '';
-            r.getCell(2).value = act.tag || '';
-            r.getCell(3).value = act.prog_no_prog || '';
-            r.getCell(4).value = act.estacion || '';
-            r.getCell(5).value = act.avance || '';
-            r.getCell(6).value = act.ot || '';
-            r.getCell(7).value = act.ejecutante || '';
+            r.getCell(1).value = act.descripcion;
+            r.getCell(2).value = act.tag;
+            r.getCell(3).value = act.prog_no_prog;
+            r.getCell(4).value = act.estacion;
+            r.getCell(5).value = act.avance;
+            r.getCell(6).value = act.ot;
+            r.getCell(7).value = act.ejecutante;
             r.eachCell((cell) => {
                 cell.alignment = { horizontal: 'center', vertical: 'middle' };
                 cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
@@ -254,9 +187,7 @@ app.post('/api/export-excel', async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename=gestion_actividades_${fecha.replace(/\//g, '-')}.xlsx`);
         await workbook.xlsx.write(res);
         res.end();
-        console.log('✅ Excel exportado correctamente');
     } catch (error) {
-        console.error('❌ Error en export:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -264,14 +195,6 @@ app.post('/api/export-excel', async (req, res) => {
 // ========== INICIAR SERVIDOR ==========
 module.exports = app;
 
-console.log('✅ Servidor listo');
-console.log('📊 Intentando conectar a Neon...');
+console.log('✅ Servidor configurado para Vercel');
+console.log('📊 Conectando a Neon...');
 console.log('🔐 Credenciales: Gestion / 2026');
-console.log('');
-console.log('📋 Endpoints disponibles:');
-console.log('  GET  /api/health       - Estado del servidor');
-console.log('  GET  /api/db-test      - Prueba de conexión a Neon');
-console.log('  GET  /api/actividades  - Obtener actividades');
-console.log('  POST /api/actividades  - Agregar actividad');
-console.log('  POST /api/login        - Iniciar sesión');
-console.log('  POST /api/export-excel - Exportar a Excel');
