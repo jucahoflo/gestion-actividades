@@ -1,20 +1,24 @@
 const express = require('express');
 const { Pool } = require('pg');
+const cors = require('cors');
 
 const app = express();
+
+// ========== CONFIGURACIÓN CORS CORRECTA ==========
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
-app.use(require('cors')());
 
 console.log('🚀 Servidor iniciado...');
 
-// ========== CONEXIÓN DIRECTA A SUPABASE ==========
-// Usando la URL completa de conexión
+// ========== CONEXIÓN A SUPABASE ==========
 const pool = new Pool({
     connectionString: 'postgresql://postgres:PYqzqvT*6/vKb!u@db.lznaxrbcyhxtwptfnekt.supabase.co:5432/postgres?sslmode=require',
-    ssl: {
-        rejectUnauthorized: false,
-        require: true
-    }
+    ssl: { rejectUnauthorized: false }
 });
 
 console.log('📊 Conectando a Supabase...');
@@ -30,7 +34,7 @@ app.get('/api/test-db', async (req, res) => {
         const result = await pool.query('SELECT NOW() as time');
         res.json({ success: true, data: result.rows[0] });
     } catch (error) {
-        console.error('❌ Error de conexión:', error.message);
+        console.error('❌ Error:', error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -47,7 +51,9 @@ app.get('/api/actividades', async (req, res) => {
 
 app.post('/api/actividades', async (req, res) => {
     try {
+        console.log('📥 POST /api/actividades');
         const { descripcion, tag, progNoProg, estacion, avance, ot, ejecutante, subarea, fecha, area } = req.body;
+        
         const result = await pool.query(
             `INSERT INTO actividades 
              (descripcion, tag, prog_no_prog, estacion, avance, ot, ejecutante, subarea, fecha, area) 
@@ -57,6 +63,8 @@ app.post('/api/actividades', async (req, res) => {
              avance || '0%', ot || 'N/A', ejecutante || 'N/A', subarea || 'MECANICA', 
              fecha || new Date().toLocaleDateString('es-ES'), area || 'AREA O SISTEMA']
         );
+        
+        console.log('✅ Actividad guardada');
         res.json({ success: true, message: 'Actividad agregada', actividad: result.rows[0] });
     } catch (error) {
         console.error('❌ Error:', error.message);
