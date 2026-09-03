@@ -19,6 +19,8 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
+console.log('📊 Conectando a Supabase...');
+
 // ========== RUTAS ==========
 
 // Health check
@@ -33,17 +35,23 @@ app.get('/api/health', (req, res) => {
 // Obtener todas las actividades
 app.get('/api/actividades', async (req, res) => {
     try {
+        console.log('📡 GET /api/actividades');
         const result = await pool.query('SELECT * FROM actividades ORDER BY id DESC');
+        console.log(`✅ Enviando ${result.rows.length} actividades`);
         res.json(result.rows);
     } catch (error) {
-        console.error('Error:', error.message);
-        res.status(500).json({ error: error.message });
+        console.error('❌ Error:', error.message);
+        res.status(500).json({ 
+            error: 'Error al obtener actividades',
+            details: error.message 
+        });
     }
 });
 
 // Agregar actividad
 app.post('/api/actividades', async (req, res) => {
     try {
+        console.log('📥 POST /api/actividades');
         const { descripcion, tag, progNoProg, estacion, avance, ot, ejecutante, subarea, fecha, area } = req.body;
         
         const result = await pool.query(
@@ -56,10 +64,11 @@ app.post('/api/actividades', async (req, res) => {
              fecha || new Date().toLocaleDateString('es-ES'), area || 'AREA O SISTEMA']
         );
         
+        console.log('✅ Actividad guardada en Supabase');
         res.json({ success: true, message: 'Actividad agregada', actividad: result.rows[0] });
     } catch (error) {
-        console.error('Error:', error.message);
-        res.status(500).json({ error: error.message });
+        console.error('❌ Error:', error.message);
+        res.status(500).json({ error: 'Error al agregar actividad', details: error.message });
     }
 });
 
@@ -137,6 +146,7 @@ app.post('/api/export-excel', async (req, res) => {
         titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8B0000' } };
         worksheet.getRow(1).height = 35;
         
+        // Fecha y Área
         worksheet.mergeCells('A2:G2');
         worksheet.getCell('A2').value = `FECHA: ${fecha || new Date().toLocaleDateString('es-ES')}`;
         worksheet.getCell('A2').font = { name: 'Arial', size: 11, bold: true };
@@ -147,6 +157,7 @@ app.post('/api/export-excel', async (req, res) => {
         worksheet.getCell('A3').font = { name: 'Arial', size: 11, bold: true };
         worksheet.getCell('A3').alignment = { horizontal: 'center' };
         
+        // Encabezados
         const headerRow = worksheet.getRow(4);
         headerRow.values = ['DESCRIPCIÓN', 'TAG', 'PROG/NÓ PROG', 'ESTACION', 'AVANCE', 'OT', 'EJECUTANTE'];
         headerRow.eachCell((cell) => {
@@ -156,6 +167,7 @@ app.post('/api/export-excel', async (req, res) => {
             cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
         });
         
+        // Datos
         let row = 5;
         actividades.forEach((act) => {
             const r = worksheet.getRow(row);
@@ -178,9 +190,14 @@ app.post('/api/export-excel', async (req, res) => {
         await workbook.xlsx.write(res);
         res.end();
     } catch (error) {
-        console.error('Error en export:', error.message);
+        console.error('❌ Error en export:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
 
+// ========== INICIAR SERVIDOR ==========
 module.exports = app;
+
+console.log('✅ Servidor configurado para Vercel con Supabase');
+console.log('📊 Conectando a Supabase PostgreSQL');
+console.log('🔐 Credenciales: Gestion / 2026');
