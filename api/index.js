@@ -7,7 +7,7 @@ app.use(require('cors')());
 
 console.log('🚀 Servidor iniciado con Supabase...');
 
-// ========== CONEXIÓN A SUPABASE (NUEVO PROYECTO) ==========
+// ========== CONEXIÓN A SUPABASE ==========
 const pool = new Pool({
     connectionString: 'postgresql://postgres:PYqzqvT*6/vKb!u@db.lznaxrbcyhxtwptfnekt.supabase.co:5432/postgres?sslmode=require',
     ssl: { rejectUnauthorized: false }
@@ -24,38 +24,23 @@ app.get('/api/health', (req, res) => {
 app.get('/api/test-db', async (req, res) => {
     try {
         const result = await pool.query('SELECT NOW() as time');
-        res.json({ 
-            success: true, 
-            message: 'Conexión a Supabase exitosa',
-            data: result.rows[0]
-        });
+        res.json({ success: true, data: result.rows[0] });
     } catch (error) {
-        console.error('❌ Error de conexión:', error.message);
-        res.status(500).json({ 
-            success: false, 
-            error: error.message
-        });
+        res.status(500).json({ error: error.message });
     }
 });
 
 app.get('/api/actividades', async (req, res) => {
     try {
-        console.log('📡 GET /api/actividades');
         const result = await pool.query('SELECT * FROM actividades ORDER BY id DESC');
-        console.log(`✅ Enviando ${result.rows.length} actividades`);
         res.json(result.rows);
     } catch (error) {
-        console.error('❌ Error:', error.message);
-        res.status(500).json({ 
-            error: 'Error al obtener actividades',
-            details: error.message 
-        });
+        res.status(500).json({ error: error.message });
     }
 });
 
 app.post('/api/actividades', async (req, res) => {
     try {
-        console.log('📥 POST /api/actividades');
         const { descripcion, tag, progNoProg, estacion, avance, ot, ejecutante, subarea, fecha, area } = req.body;
         
         const result = await pool.query(
@@ -68,11 +53,9 @@ app.post('/api/actividades', async (req, res) => {
              fecha || new Date().toLocaleDateString('es-ES'), area || 'AREA O SISTEMA']
         );
         
-        console.log('✅ Actividad guardada en Supabase');
         res.json({ success: true, message: 'Actividad agregada', actividad: result.rows[0] });
     } catch (error) {
-        console.error('❌ Error:', error.message);
-        res.status(500).json({ error: 'Error al agregar actividad', details: error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 
@@ -91,7 +74,6 @@ app.post('/api/login', async (req, res) => {
             res.status(401).json({ success: false, message: 'Contraseña incorrecta' });
         }
     } catch (error) {
-        console.error('❌ Error en login:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -106,7 +88,11 @@ app.post('/api/verify', async (req, res) => {
     }
 });
 
-module.exports = app;
+// ========== INICIAR SERVIDOR ==========
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Servidor corriendo en puerto ${PORT}`);
+    console.log(`🔐 Credenciales: Gestion / 2026`);
+});
 
-console.log('✅ Servidor configurado con Supabase');
-console.log('🔐 Credenciales: Gestion / 2026');
+module.exports = app;
